@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>練習試合チェックリスト</title>
+
+<style>
+body { font-family:sans-serif; margin:0; }
+.container { padding:15px; }
+
+h1 { text-align:center; }
+
+button {
+    width:100%;
+    padding:15px;
+    font-size:18px;
+    margin-bottom:15px;
+}
+
+.group {
+    border:2px solid #ccc;
+    border-radius:10px;
+    padding:10px;
+    margin-bottom:15px;
+}
+
+.group-title { font-weight:bold; margin-bottom:8px; }
+
+label {
+    display:flex;
+    align-items:center;
+    margin-bottom:6px;
+}
+
+input[type="checkbox"] {
+    transform:scale(1.4);
+    margin-right:8px;
+}
+
+input[type="number"], input[type="text"], select {
+    font-size:16px;
+    margin:0 4px;
+    width:60px;
+}
+
+.indent { margin-left:20px; }
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+<h1>練習試合チェックリスト</h1>
+
+<button onclick="resetAll()">リセットボタン</button>
+
+<div>
+<input type="number" id="month">月
+<input type="number" id="day">日（
+<input type="text" id="weekday">）
+<select id="gender">
+<option>男子</option>
+<option>女子</option>
+</select>
+</div>
+
+<div id="checklist"></div>
+
+</div>
+
+<script>
+const data = [
+["ユニフォーム",[
+"ユニフォーム＿着（＿番～＿番）",
+"ビブス＿着（＿番～＿番）"
+]],
+["ボール",[
+"ボール＿個","ボールかご","ボールバック"
+]],
+["ベンチ道具",[
+"スコアシート","筆記用具","作戦盤","試合球（空気チェックする）",
+"救急バック","うちわ","足マット","ベンチタオル","ベンチ毛布",
+"クーラーボックス",
+{t:"氷嚢（各自）",i:1},
+{t:"コーチドリンク",i:1},
+{t:"審判ドリンク",i:1},
+{t:"予備のドリンク",i:1},
+"選手ドリンク用かご２つ","消毒（タオルも一緒に）","マスク"
+]],
+["その他",[
+"ブルーシート","団旗（大会時必須）"
+]],
+["練習試合関連",[
+"お茶菓子","来客用ドリンク（珈琲類）",
+"タイムテーブル（５枚　TO席・舞台・応援席用・その他）",
+"対戦相手ネームプレート（２枚ずつ　ラミ加工）",
+"対戦相手控室準備","対戦相手控室用ネーム"
+]]
+];
+
+const container = document.getElementById("checklist");
+
+function createItem(text){
+    return text.replace(/＿/g,'<input type="number">');
+}
+
+// 保存
+function save(){
+    const state = {
+        checks: [],
+        numbers: [],
+        date: {
+            month: document.getElementById("month").value,
+            day: document.getElementById("day").value,
+            weekday: document.getElementById("weekday").value,
+            gender: document.getElementById("gender").value
+        }
+    };
+
+    document.querySelectorAll("input[type=checkbox]").forEach(c=>{
+        state.checks.push(c.checked);
+    });
+
+    document.querySelectorAll("input[type=number]").forEach(n=>{
+        state.numbers.push(n.value);
+    });
+
+    localStorage.setItem("checklist", JSON.stringify(state));
+}
+
+// 読み込み
+function load(){
+    const state = JSON.parse(localStorage.getItem("checklist") || "{}");
+
+    if(state.date){
+        document.getElementById("month").value = state.date.month || "";
+        document.getElementById("day").value = state.date.day || "";
+        document.getElementById("weekday").value = state.date.weekday || "";
+        document.getElementById("gender").value = state.date.gender || "男子";
+    }
+
+    document.querySelectorAll("input[type=checkbox]").forEach((c,i)=>{
+        if(state.checks && state.checks[i]) c.checked = true;
+    });
+
+    document.querySelectorAll("input[type=number]").forEach((n,i)=>{
+        if(state.numbers && state.numbers[i]) n.value = state.numbers[i];
+    });
+}
+
+data.forEach(group=>{
+    const div = document.createElement("div");
+    div.className="group";
+
+    const title = document.createElement("div");
+    title.className="group-title";
+    title.textContent=group[0];
+    div.appendChild(title);
+
+    group[1].forEach(item=>{
+        let text = item;
+        let indent = false;
+
+        if(typeof item==="object"){
+            text=item.t;
+            indent=true;
+        }
+
+        const label=document.createElement("label");
+        if(indent) label.classList.add("indent");
+
+        const checkbox=document.createElement("input");
+        checkbox.type="checkbox";
+        checkbox.addEventListener("change", save);
+
+        const span=document.createElement("span");
+        span.innerHTML=createItem(text);
+
+        label.appendChild(checkbox);
+        label.appendChild(span);
+
+        div.appendChild(label);
+    });
+
+    container.appendChild(div);
+});
+
+// 入力保存イベント
+document.addEventListener("input", save);
+
+// リセット
+function resetAll(){
+    if(confirm("リセットしますか？")){
+        localStorage.removeItem("checklist");
+        location.reload();
+    }
+}
+
+// 初期読み込み
+load();
+</script>
+
+</body>
+</html>
